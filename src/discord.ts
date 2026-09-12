@@ -2,6 +2,7 @@ import { Client, GatewayIntentBits, TextChannel, SlashCommandBuilder, ChatInputC
 import { processAgentRequest, handleQueuedAgentRequest } from './agent.js';
 import { getSession, createSession, deleteSession, saveSessions, getSessions } from './sessions.js';
 import { buildWelcomeEmbed } from './welcome-message.js';
+import { routeAndHandle } from './router.js';
 import { execSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
@@ -280,8 +281,6 @@ export async function initDiscord() {
 
                 try {
                     await handleQueuedAgentRequest(message.channelId, message.content || '', message.author.id, async (formatted) => {
-                        await sendMessage(formatted, message.channelId);
-                    }, session.agentDir, session.workBranch);
                 } catch (error) {
                     console.error('Error processing session agent request:', error);
                     await sendMessage(`AGENT REPLY\nType: error\nBody:\nFailed to process session request.`, message.channelId);
