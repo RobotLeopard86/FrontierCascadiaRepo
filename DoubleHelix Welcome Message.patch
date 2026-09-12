@@ -1,6 +1,3 @@
-From db6ff91c7ef2df2ab795a2883d6b524a49e50d16 Mon Sep 17 00:00:00 2001
-From: Claude <noreply@anthropic.com>
-Date: Sat, 12 Sep 2026 18:00:38 +0000
 Subject: [PATCH] Add Discord welcome message for new servers and members
 
 Adds a shared welcome embed (buildWelcomeEmbed in src/welcomeMessage.ts)
@@ -21,8 +18,6 @@ Also fixes tsconfig.json: it had no "include", so tsc was pulling in
 stray .ts files from the vendored superpowers/ dependency and failing
 outside rootDir. Scoped it to src/ so `pnpm run build` actually works.
 
-Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
-Claude-Session: https://claude.ai/code/session_01WB8zLCt88mK68ZUADKoQE9
 ---
  src/index.ts          | 55 +++++++++++++++++++++++++++++++++++++++--
  src/welcomeMessage.ts | 57 +++++++++++++++++++++++++++++++++++++++++++
