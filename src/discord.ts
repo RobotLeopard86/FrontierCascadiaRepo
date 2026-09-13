@@ -1,4 +1,5 @@
 import { Client, GatewayIntentBits, TextChannel } from 'discord.js';
+import { processAgentRequest } from './agent.js';
 
 const TOKEN = process.env.DISCORD_TOKEN || '';
 const GUILD_ID = process.env.GUILD_ID || '';
@@ -55,6 +56,18 @@ export async function initDiscord() {
         client.on('messageCreate', async (message) => {
             if (message.channelId === resolvedChannelId) {
                 console.log(`[Discord] ${message.author.username}: ${message.content}`);
+
+                if (message.content?.startsWith('AGENT REQUEST: ')) {
+                    const prompt = message.content.slice('AGENT REQUEST: '.length).trim();
+                    try {
+                        await processAgentRequest(prompt, async (formatted) => {
+                            await sendMessage(formatted);
+                        });
+                    } catch (error) {
+                        console.error('Error processing agent request:', error);
+                        await sendMessage(`AGENT REPLY\nType: error\nBody:\nFailed to process agent request.`);
+                    }
+                }
             }
         });
 
