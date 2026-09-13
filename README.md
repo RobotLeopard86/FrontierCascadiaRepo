@@ -1,3 +1,4 @@
-# Frontier Cascadia 2026 Project
+# DoubleHelix
+#### Collaborative agentic coding
 
 Coming soon...
