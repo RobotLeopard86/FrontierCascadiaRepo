@@ -22,16 +22,17 @@ export function buildWelcomeEmbed(): EmbedBuilder {
                     '`/create <Git repository URL> [branch]` — spin up a new session\n' +
                     '`/invite @user` — pull someone into your session\n' +
                     '`/kick @user` — banish somebody from your session\n' +
+                    '`/permissions @user <role>` — manage viewer/collaborator roles\n' +
                     '`/shell <command>` — run a shell command in your session\n' +
                     '`/end` — end the session for everyone',
             },
             {
                 name: '🫂 Trust & permissions',
                 value:
-                    "Everyone invited into a session is **equally trusted by default** — " +
-                    "anyone can ask Claude to run commands, edit files, or commit changes. " +
-                    "The person who runs `/create` sets the trust level for that session up " +
-                    "front, so check with them if you're unsure what you can do.",
+                    "The session creator manages who can interact with the agent. " +
+                    "**Collaborators** can send commands and edit files, while **Viewers** " +
+                    "can only watch. Everyone is a viewer by default. " +
+                    "Check with the creator in a non-session channel if you need your permissions upgraded.",
             },
             {
                 name: '⚠️ Heads up',

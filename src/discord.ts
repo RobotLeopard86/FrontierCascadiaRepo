@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits, TextChannel, SlashCommandBuilder, ChatInputCommandInteraction, PermissionFlagsBits, ChannelType, PermissionOverwrites } from 'discord.js';
 import { processAgentRequest, handleQueuedAgentRequest } from './agent.js';
-import { getSession, createSession, deleteSession } from './sessions.js';
+import { getSession, createSession, deleteSession, saveSessions, getSessions } from './sessions.js';
 import { buildWelcomeEmbed } from './welcome-message.js';
 import { execSync } from 'child_process';
 import path from 'path';
@@ -31,6 +31,15 @@ async function registerCommands(client: Client) {
             .setName('kick')
             .setDescription('Remove a user from the session channel')
             .addUserOption(opt => opt.setName('user').setDescription('User to kick').setRequired(true)),
+        new SlashCommandBuilder()
+            .setName('permissions')
+            .setDescription('Manage session permissions')
+            .addUserOption(opt => opt.setName('user').setDescription('User to manage').setRequired(true))
+            .addStringOption(opt => opt.setName('role').setDescription('Role to assign').setRequired(true)
+                .addChoices(
+                    { name: 'Viewer', value: 'viewer' },
+                    { name: 'Collaborator', value: 'collaborator' }
+                )),
         new SlashCommandBuilder()
             .setName('end')
             .setDescription('End the session and merge changes'),
@@ -160,6 +169,7 @@ export async function initDiscord() {
                         initialBranch: branch,
                         workBranch: workBranch,
                         creatorId: user.id,
+                        permissions: {}
                     });
 
                     await interaction.editReply(`Session created! Join here: <#${sessionChannel.id}>`);
@@ -184,10 +194,26 @@ export async function initDiscord() {
                     if (targetUser.id === session.creatorId) return interaction.reply({ content: 'Cannot kick the session creator', ephemeral: true });
 
                     await interaction.deferReply();
-                    const discordChannel = await client.channels.fetch(channel!.id) as TextChannel;
+                    const discordChannel = await client.channels.fetch(channel!.id);
                     await discordChannel.permissionOverwrites.delete(targetUser.id);
 
                     await interaction.editReply(`Kicked ${targetUser.username} from the session.`);
+                } else if (commandName === 'permissions') {
+                    const targetUser = options.getUser('user', true);
+                    const role = options.getString('role', true) as 'viewer' | 'collaborator';
+                    const session = getSession(channel?.id || '');
+                    if (!session) return interaction.reply({ content: 'Not in a session channel', ephemeral: true });
+                    if (user.id !== session.creatorId) return interaction.reply({ content: 'Only the session creator can manage permissions.', ephemeral: true });
+
+                    await interaction.deferReply();
+
+                    session.permissions = session.permissions || {};
+                    session.permissions[targetUser.id] = role;
+                    let updatedSessions = getSessions();
+                    updatedSessions[channel?.id || ''] = session;
+                    saveSessions(updatedSessions);
+
+                    await interaction.editReply(`Set ${targetUser.username}'s role to **${role}**.`);
                 } else if (commandName === 'shell') {
                     const command = options.getString('command', true);
                     const session = getSession(channel?.id || '');
@@ -245,6 +271,13 @@ export async function initDiscord() {
             if (session) {
                 // Session channel: no prefix needed
                 console.log(`[Session] ${message.author.username}: ${message.content}`);
+                console.log(`[SJSON] ${JSON.stringify(session.permissions)}`)
+
+                if (message.author.id !== session.creatorId && session.permissions?.[message.author.id] !== 'collaborator') {
+                    await sendMessage(`You have viewer permissions and cannot send commands to the agent. Please ask the session creator to upgrade you to a collaborator in another channel.`, message.channelId);
+                    return;
+                }
+
                 try {
                     await handleQueuedAgentRequest(message.channelId, message.content || '', message.author.id, async (formatted) => {
                         await sendMessage(formatted, message.channelId);
