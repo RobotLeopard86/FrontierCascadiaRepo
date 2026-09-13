@@ -125,8 +125,7 @@ export async function initDiscord() {
                     const url = options.getString('url', true);
                     const branch = options.getString('branch') || 'main';
 
-                    await interaction.deferReply();
-                    await interaction.editReply('Creating session...');
+                    await interaction.reply('Creating session...');
 
                     const agentRoot = path.join(process.cwd(), 'agent');
                     if (!fs.existsSync(agentRoot)) fs.mkdirSync(agentRoot, { recursive: true });
@@ -178,7 +177,7 @@ export async function initDiscord() {
                     const session = getSession(channel?.id || '');
                     if (!session) return interaction.reply({ content: 'Not in a session channel', ephemeral: true });
 
-                    await interaction.deferReply();
+                    await interaction.reply('Inviting user...');
                     const discordChannel = await client.channels.fetch(channel!.id) as TextChannel;
                     await discordChannel.permissionOverwrites.create(targetUser.id, {
                         ViewChannel: true,
@@ -193,7 +192,7 @@ export async function initDiscord() {
                     if (!session) return interaction.reply({ content: 'Not in a session channel', ephemeral: true });
                     if (targetUser.id === session.creatorId) return interaction.reply({ content: 'Cannot kick the session creator', ephemeral: true });
 
-                    await interaction.deferReply();
+                    await interaction.reply('Kicking user...');
                     const discordChannel = await client.channels.fetch(channel!.id);
                     await discordChannel.permissionOverwrites.delete(targetUser.id);
 
@@ -205,7 +204,7 @@ export async function initDiscord() {
                     if (!session) return interaction.reply({ content: 'Not in a session channel', ephemeral: true });
                     if (user.id !== session.creatorId) return interaction.reply({ content: 'Only the session creator can manage permissions.', ephemeral: true });
 
-                    await interaction.deferReply();
+                    await interaction.reply('Updating permissions...');
 
                     session.permissions = session.permissions || {};
                     session.permissions[targetUser.id] = role;
@@ -219,7 +218,7 @@ export async function initDiscord() {
                     const session = getSession(channel?.id || '');
                     if (!session) return interaction.reply({ content: 'Not in a session channel', ephemeral: true });
 
-                    await interaction.deferReply();
+                    await interaction.reply('Running shell command...');
                     try {
                         const output = execSync(command, { cwd: session.agentDir, encoding: 'utf8' });
                         await interaction.editReply(`**Shell Output:**\n\`\`\`\n${output || 'No output'}\n\`\`\``);
@@ -230,7 +229,7 @@ export async function initDiscord() {
                     const session = getSession(channel?.id || '');
                     if (!session) return interaction.reply({ content: 'Not in a session channel', ephemeral: true });
 
-                    await interaction.deferReply();
+                    await interaction.reply('Ending session...');
                     try {
                         const { agentDir, initialBranch, workBranch } = session;
                         execSync(`git checkout ${initialBranch}`, { cwd: agentDir });
