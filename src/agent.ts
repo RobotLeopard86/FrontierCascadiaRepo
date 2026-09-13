@@ -195,6 +195,10 @@ export async function processAgentRequest(
                 try {
                     console.log(`[Git] Committing changes in ${workingDir}...`);
                     execSync('git add .', { cwd: workingDir });
+                    execSync('git config user.name "HelixBot"', { cwd: workingDir });
+                    execSync('git config user.email "agent@helixbot.local"', { cwd: workingDir });
+                    execSync('git config commit.gpgsign false', { cwd: workingDir });
+                    execSync('git config tag.gpgsign false', { cwd: workingDir });
                     const truncatedPrompt = prompt.length > 134 ? prompt.slice(0, 134) + '...' : prompt;
                     const commitMsg = `Agent update: ${truncatedPrompt}`.slice(0, 150);
                     const escapedMsg = commitMsg.replace(/"/g, '\\"');
