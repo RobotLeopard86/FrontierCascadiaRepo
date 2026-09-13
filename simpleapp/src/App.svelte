@@ -7,6 +7,8 @@
   <h1>Hello {name}!</h1>
   <p>Welcome to your clean Svelte page.</p>
   <Counter />
+  <Counter />
+  <Counter />
 </main>
 
 <style>
