@@ -1,13 +1,13 @@
 import { Client, GatewayIntentBits, TextChannel, SlashCommandBuilder, ChatInputCommandInteraction, PermissionFlagsBits, ChannelType, PermissionOverwrites } from 'discord.js';
-import { processAgentRequest } from './agent.js';
+import { processAgentRequest, handleQueuedAgentRequest } from './agent.js';
 import { getSession, createSession, deleteSession } from './sessions.js';
 import { buildWelcomeEmbed } from './welcome-message.js';
 import { execSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
-import { renderTurn } from './render.js';
+import { renderTurn, renderToolCall } from './render.js';
 import { saveTurn, getTurn } from './storage.js';
-import { DiscordTurn } from './types.js';
+import type { DiscordTurn, ToolCall } from './types.js';
 
 const TOKEN = process.env.DISCORD_TOKEN || '';
 const GUILD_ID = process.env.GUILD_ID || '';
@@ -40,7 +40,7 @@ async function registerCommands(client: Client) {
             .addStringOption(opt => opt.setName('command').setDescription('Shell command to run').setRequired(true)),
         new SlashCommandBuilder()
             .setName('dh-help')
-            .setDescription('Get help and information about Double Helix'),
+            .setDescription('Get help and information about HelixBot'),
     ];
 
     try {
@@ -101,7 +101,7 @@ export async function initDiscord() {
             if (interaction.isButton()) {
                 if (interaction.customId.startsWith('thinking:')) {
                     const turnId = interaction.customId.split(':')[1];
-                    const turn = await getTurn(turnId);
+                    const turn = await getTurn(turnId || '');
                     if (!turn) return interaction.reply({ content: 'Turn record not found.', ephemeral: true });
                     return interaction.reply({ content: `**Thinking:**\n${turn.thinking}`, ephemeral: true });
                 }
@@ -246,7 +246,7 @@ export async function initDiscord() {
                 // Session channel: no prefix needed
                 console.log(`[Session] ${message.author.username}: ${message.content}`);
                 try {
-                    await processAgentRequest(message.content || '', async (formatted) => {
+                    await handleQueuedAgentRequest(message.channelId, message.content || '', message.author.id, async (formatted) => {
                         await sendMessage(formatted, message.channelId);
                     }, session.agentDir, session.workBranch);
                 } catch (error) {
@@ -264,7 +264,7 @@ export async function initDiscord() {
     });
 }
 
-export async function sendMessage(content: string | DiscordTurn, channelId?: string) {
+export async function sendMessage(content: string | DiscordTurn | ToolCall, channelId?: string) {
     const targetId = channelId || resolvedChannelId;
     if (!targetId) {
         throw new Error('Bot is not ready; channel resolution pending');
@@ -276,7 +276,7 @@ export async function sendMessage(content: string | DiscordTurn, channelId?: str
 
     if (typeof content === 'string') {
         await (channel as TextChannel).send(content);
-    } else {
+    } else if ('turnId' in content) {
         await saveTurn(content);
         const rendered = await renderTurn(content);
         try {
@@ -295,5 +295,8 @@ export async function sendMessage(content: string | DiscordTurn, channelId?: str
                 }
             }
         }
+    } else {
+        const embed = renderToolCall(content);
+        await (channel as TextChannel).send({ embeds: [embed] });
     }
 }

@@ -1,15 +1,15 @@
 import { EmbedBuilder } from 'discord.js';
 
 /**
- * Builds the Double Helix welcome embed.
+ * Builds the HelixBot welcome embed.
  * Used for the /dh-help command.
  */
 export function buildWelcomeEmbed(): EmbedBuilder {
     return new EmbedBuilder()
         .setColor(0x9b59b6)
-        .setTitle('🧬 Welcome to Double Helix')
+        .setTitle('🤖 Welcome to HelixBot')
         .setDescription(
-            "Double Helix lets a whole group share **one live Claude Code session** " +
+            "HelixBot lets a whole group share **one live Claude Code session** " +
             "instead of everyone running their own. Start a session, pull your friends " +
             "into it, and you're all typing into the same conversation, same files, same " +
             "agent — real multiplayer programming, powered by Claude Code with the " +
@@ -42,5 +42,5 @@ export function buildWelcomeEmbed(): EmbedBuilder {
                     "your session-mates.",
             }
         )
-        .setFooter({ text: 'Double Helix — multiplayer agentic programming with Claude' });
+        .setFooter({ text: 'HelixBot — multiplayer agentic programming with Claude' });
 }

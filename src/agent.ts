@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import readline from 'readline';
-import type { DiscordTurn } from './types.js';
+import type { DiscordTurn, ToolCall } from './types.js';
 
 interface TurnState {
     thinking: string[];
@@ -11,9 +11,62 @@ interface TurnState {
     lastBashResult: string;
 }
 
+interface QueuedRequest {
+    prompt: string;
+    userId: string;
+}
+
+interface ChannelQueue {
+    active: boolean;
+    queue: QueuedRequest[];
+}
+
+const channelQueues = new Map<string, ChannelQueue>();
+
+export async function handleQueuedAgentRequest(
+    channelId: string,
+    prompt: string,
+    userId: string,
+    onMessage: (message: string | DiscordTurn | ToolCall) => Promise<void>,
+    workingDir?: string,
+    workBranch?: string
+): Promise<void> {
+    let queueState = channelQueues.get(channelId);
+    if (!queueState) {
+        queueState = { active: false, queue: [] };
+        channelQueues.set(channelId, queueState);
+    }
+
+    if (queueState.active) {
+        queueState.queue.push({ prompt, userId });
+        const position = queueState.queue.length;
+        await onMessage(`You are at position ${position} in the queue.`);
+        return;
+    }
+
+    queueState.active = true;
+    try {
+        await processAgentRequest(prompt, onMessage, workingDir, workBranch);
+    } finally {
+        queueState.active = false;
+    }
+
+    while (queueState.queue.length > 0) {
+        const next = queueState.queue.shift();
+        if (next) {
+            queueState.active = true;
+            try {
+                await processAgentRequest(next.prompt, onMessage, workingDir, workBranch);
+            } finally {
+                queueState.active = false;
+            }
+        }
+    }
+}
+
 export async function processAgentRequest(
     prompt: string,
-    onMessage: (message: string | DiscordTurn) => Promise<void>,
+    onMessage: (message: string | DiscordTurn | ToolCall) => Promise<void>,
     workingDir?: string,
     workBranch?: string
 ): Promise<void> {
@@ -53,12 +106,38 @@ export async function processAgentRequest(
 
                 if (parsed.type === 'assistant') {
                     state.lastAssistantMessage = body;
+                } else if (parsed.type === 'tool_use') {
+                    const tool = parsed.body;
+                    if (tool && typeof tool === 'object') {
+                        await onMessage({
+                            name: tool.name,
+                            input: tool.input,
+                            type: 'call',
+                        } as ToolCall);
+                    } else {
+                        const formatted = `AGENT REPLY\nType: ${parsed.type}\nBody:\n${body}`;
+                        await onMessage(formatted);
+                    }
+                } else if (parsed.type === 'tool_result') {
+                    const tool = parsed.body;
+                    if (tool && typeof tool === 'object') {
+                        await onMessage({
+                            name: tool.name,
+                            result: tool.subtype,
+                            type: 'result',
+                        } as ToolCall);
+                    } else {
+                        const formatted = `AGENT REPLY\nType: ${parsed.type}\nBody:\n${body}`;
+                        await onMessage(formatted);
+                    }
                 } else if (parsed.type === 'result') {
                     state.lastBashResult = body;
+                    const formatted = `AGENT REPLY\nType: ${parsed.type}\nBody:\n${body}`;
+                    await onMessage(formatted);
+                } else {
+                    const formatted = `AGENT REPLY\nType: ${parsed.type}\nBody:\n${body}`;
+                    await onMessage(formatted);
                 }
-
-                const formatted = `AGENT REPLY\nType: ${parsed.type}\nBody:\n${body}`;
-                await onMessage(formatted);
             } catch (e) {
                 // Ignore non-JSON output from vite-node
             }
@@ -77,6 +156,29 @@ export async function processAgentRequest(
                 const parsed = JSON.parse(line);
                 const body = parsed.body || '';
                 state.thinking.push(`[${parsed.type}] ${body}`);
+
+                if (parsed.type === 'tool_use') {
+                    const tool = parsed.body;
+                    if (tool && typeof tool === 'object') {
+                        await onMessage({
+                            name: tool.name,
+                            input: tool.input,
+                            type: 'call',
+                        } as ToolCall);
+                        return;
+                    }
+                } else if (parsed.type === 'tool_result') {
+                    const tool = parsed.body;
+                    if (tool && typeof tool === 'object') {
+                        await onMessage({
+                            name: tool.name,
+                            result: tool.subtype,
+                            type: 'result',
+                        } as ToolCall);
+                        return;
+                    }
+                }
+
                 const formatted = `AGENT REPLY\nType: ${parsed.type}\nBody:\n${body}`;
                 await onMessage(formatted);
             } catch (e) {
@@ -97,7 +199,7 @@ export async function processAgentRequest(
                     const commitMsg = `Agent update: ${truncatedPrompt}`.slice(0, 150);
                     const escapedMsg = commitMsg.replace(/"/g, '\\"');
                     execSync(`git commit -m "${escapedMsg}"`, { cwd: workingDir });
-                    execSync(`git push origin ${workBranch}`, { cwd: workingDir });
+                    execSync(`git push -u origin ${workBranch}`, { cwd: workingDir });
                     console.log(`[Git] Successfully pushed changes to ${workBranch}`);
                 } catch (e) {
                     console.error(`[Git] Failed to commit/push changes: ${e instanceof Error ? e.message : String(e)}`);

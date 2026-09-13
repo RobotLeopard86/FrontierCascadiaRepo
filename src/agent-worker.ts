@@ -9,10 +9,10 @@ async function main() {
     }
 
     const systemInstructions = `
-You are an agent operating under the Double Helix Response Contract.
+You are an agent operating under the HelixBot Response Contract.
 Your goal is to fulfill the user request and then provide a final summary.
 
-## Session Context: Double Helix
+## Session Context: HelixBot
 This session is shared by multiple participants via Discord.
 - Treat "your human partner" as the collective group of session participants.
 - Every participant is trusted equally unless a specific owner policy is declared.
@@ -55,11 +55,17 @@ Ensure the DIFF is a standard unified diff and the CODE blocks provide enough co
                     if ("text" in block) {
                         console.log(JSON.stringify({ type: "assistant", body: block.text }));
                     } else if ("name" in block) {
-                        console.log(JSON.stringify({ type: "tool_use", body: block.name }));
+                        console.log(JSON.stringify({
+                            type: "tool_use",
+                            body: { name: block.name, input: block.input }
+                        }));
                     }
                 }
             } else if (message.type === "result") {
-                console.log(JSON.stringify({ type: "result", body: message.subtype }));
+                console.log(JSON.stringify({
+                    type: "tool_result",
+                    body: { name: message.toolUseId, subtype: message.subtype }
+                }));
             }
         }
     } catch (error) {

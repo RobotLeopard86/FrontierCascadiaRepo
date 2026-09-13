@@ -5,7 +5,7 @@ import {
   ButtonStyle,
   AttachmentBuilder
 } from 'discord.js';
-import { DiscordTurn } from './types';
+import { DiscordTurn, ToolCall } from './types';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -15,6 +15,21 @@ export interface RenderResult {
   components: any[];
   files: any[];
   tempFiles: string[];
+}
+
+export function renderToolCall(tool: ToolCall): EmbedBuilder {
+  const embed = new EmbedBuilder()
+    .setColor(tool.type === 'call' ? 0x3498db : 0x2ecc71);
+
+  if (tool.type === 'call') {
+    embed.setTitle(`🛠️ Tool Call: ${tool.name}`)
+      .setDescription(`\`\`\`json\n${JSON.stringify(tool.input, null, 2)}\n\`\`\``);
+  } else {
+    embed.setTitle(`✅ Tool Result: ${tool.name}`)
+      .setDescription(`\`\`\`\n${tool.result}\n\`\`\``);
+  }
+
+  return embed;
 }
 
 export async function renderTurn(turn: DiscordTurn): Promise<RenderResult> {

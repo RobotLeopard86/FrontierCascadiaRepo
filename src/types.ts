@@ -7,3 +7,10 @@ export interface DiscordTurn {
   verification: string;
   thinking: string;
 }
+
+export interface ToolCall {
+  name: string;
+  input: any;
+  type: 'call' | 'result';
+  result?: string;
+}
