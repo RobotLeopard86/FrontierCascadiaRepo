@@ -1,4 +1,5 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
+import { execSync } from "child_process";
 
 async function main() {
     const prompt = process.argv[2];
@@ -8,6 +9,16 @@ async function main() {
     }
 
     try {
+        // Plugin management: Ensure superpowers is installed
+        try {
+            const plugins = execSync("~/.local/bin/claude plugin list", { encoding: "utf8" });
+            if (!plugins.includes("superpowers")) {
+                execSync("~/.local/bin/claude plugin install superpowers@claude-plugins-official", { stdio: "inherit" });
+            }
+        } catch (e) {
+            console.error(JSON.stringify({ type: "error", body: `Plugin management failed: ${e instanceof Error ? e.message : String(e)}` }));
+        }
+
         for await (const message of query({
             prompt: prompt,
             options: {
