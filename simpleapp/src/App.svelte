@@ -22,6 +22,8 @@
     <li>What's orange and sounds like a parrot? A carrot.</li>
     <li>Why did the bicycle fall over? Because it was two-tired.</li>
     <li>What do you call a can opener that doesn't work? A can't opener.</li>
+    <li>Why is the calendar scary? Because its days are numbered.</li>
+    <li>My wife told me to stop pretending to be a flamingo. I had to put my foot down.</li>
   </ul>
 </section>
 
