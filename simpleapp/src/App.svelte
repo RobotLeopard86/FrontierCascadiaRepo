@@ -12,9 +12,9 @@
 </main>
 
 <section>
-  <h2>Bad Dad Jokes</h2>
+  <h2>Bad Lesbian Jokes</h2>
   <ul>
-    <li>Why did the scarecrow win an award? Because he was outstanding in his field.</li>
+    <li>Why did the scarecrow win an award? Because she was outstanding in her field.</li>
     <li>What do you call a fake noodle? An impasta.</li>
     <li>I'm reading a book on anti-gravity. It's impossible to put down.</li>
     <li>Why don't scientists trust atoms? Because they make up everything.</li>
