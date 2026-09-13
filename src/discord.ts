@@ -1,7 +1,7 @@
 import { Client, GatewayIntentBits, TextChannel, SlashCommandBuilder, PermissionFlagsBits, ChannelType, PermissionOverwrites } from 'discord.js';
 import { handleQueuedAgentRequest } from './agent.js';
 import { getSession, createSession, deleteSession, saveSessions, getSessions } from './sessions.js';
-import { buildWelcomeEmbed } from './welcome-message.js';
+import { buildHelpEmbed } from './help.js';
 import { execSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
@@ -47,6 +47,19 @@ async function registerCommands(client: Client) {
             .setName('shell')
             .setDescription('Run a shell command in the agent directory')
             .addStringOption(opt => opt.setName('command').setDescription('Shell command to run').setRequired(true)),
+        new SlashCommandBuilder()
+            .setName('model')
+            .setDescription('Change the model for the current session')
+            .addStringOption(opt => opt.setName('model_id').setDescription('Model ID to use').setRequired(true)),
+        new SlashCommandBuilder()
+            .setName('effort')
+            .setDescription('Change the effort level for the current session')
+            .addStringOption(opt => opt.setName('level').setDescription('Effort level').setRequired(true)
+                .addChoices(
+                    { name: 'Low', value: 'low' },
+                    { name: 'Medium', value: 'medium' },
+                    { name: 'High', value: 'high' }
+                )),
         new SlashCommandBuilder()
             .setName('dh-help')
             .setDescription('Get help and information about HelixBot'),
@@ -225,6 +238,36 @@ export async function initDiscord() {
                     } catch (e: any) {
                         await interaction.editReply(`**Shell Error:**\n\`\`\`\n${e.stderr?.toString() || e.message}\n\`\`\``);
                     }
+                } else if (commandName === 'model') {
+                    const modelId = options.getString('model_id', true);
+                    const session = getSession(channel?.id || '');
+                    if (!session) return interaction.reply({ content: 'Not in a session channel', ephemeral: true });
+                    if (user.id !== session.creatorId && session.permissions?.[user.id] !== 'collaborator') {
+                        return interaction.reply({ content: 'Only collaborators can change session settings.', ephemeral: true });
+                    }
+
+                    await interaction.reply('Updating model...');
+                    session.model = modelId;
+                    const updatedSessions = getSessions();
+                    updatedSessions[channel?.id || ''] = session;
+                    saveSessions(updatedSessions);
+
+                    await interaction.editReply(`Session model updated to **${modelId}**.`);
+                } else if (commandName === 'effort') {
+                    const level = options.getString('level', true) as 'low' | 'medium' | 'high';
+                    const session = getSession(channel?.id || '');
+                    if (!session) return interaction.reply({ content: 'Not in a session channel', ephemeral: true });
+                    if (user.id !== session.creatorId && session.permissions?.[user.id] !== 'collaborator') {
+                        return interaction.reply({ content: 'Only collaborators can change session settings.', ephemeral: true });
+                    }
+
+                    await interaction.reply('Updating effort level...');
+                    session.effort = level;
+                    const updatedSessions = getSessions();
+                    updatedSessions[channel?.id || ''] = session;
+                    saveSessions(updatedSessions);
+
+                    await interaction.editReply(`Session effort level updated to **${level}**.`);
                 } else if (commandName === 'end') {
                     const session = getSession(channel?.id || '');
                     if (!session) return interaction.reply({ content: 'Not in a session channel', ephemeral: true });
@@ -251,7 +294,7 @@ export async function initDiscord() {
                         await interaction.editReply(`**Error ending session:**\n${e.message}`);
                     }
                 } else if (commandName === 'dh-help') {
-                    await interaction.reply({ embeds: [buildWelcomeEmbed()] });
+                    await interaction.reply({ embeds: [buildHelpEmbed()] });
                 }
             } catch (error) {
                 console.error('Error handling interaction:', error);
@@ -279,7 +322,7 @@ export async function initDiscord() {
                 try {
                     await handleQueuedAgentRequest(message.channelId, message.content || '', message.author.id, async (formatted) => {
                         await sendMessage(formatted, message.channelId);
-                    }, session.agentDir, session.workBranch);
+                    }, session.agentDir, session.workBranch, session.model, session.effort);
                 } catch (error) {
                     console.error('Error processing session agent request:', error);
                     await sendMessage(`AGENT REPLY\nType: error\nBody:\nFailed to process session request.`, message.channelId);

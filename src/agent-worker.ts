@@ -3,6 +3,8 @@ import { execSync } from "child_process";
 
 async function main() {
     const prompt = process.argv[2];
+    const model = process.argv[3];
+    const effort = process.argv[4];
     if (!prompt) {
         console.error(JSON.stringify({ type: "error", body: "No prompt provided" }));
         process.exit(1);
@@ -46,6 +48,8 @@ Ensure the DIFF is a standard unified diff and the CODE blocks provide enough co
         for await (const message of query({
             prompt: fullPrompt,
             options: {
+                model: model || undefined,
+                effort: effort || undefined,
                 allowedTools: ["Read", "Edit", "Glob", "Bash"],
                 permissionMode: "bypassPermissions",
                 continue: true

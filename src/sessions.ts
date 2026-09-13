@@ -7,6 +7,8 @@ interface Session {
     workBranch: string;
     creatorId: string;
     permissions: Record<string, 'viewer' | 'collaborator'>;
+    model?: string;
+    effort?: 'low' | 'medium' | 'high';
 }
 
 const SESSIONS_FILE = path.join(process.cwd(), 'sessions.json');

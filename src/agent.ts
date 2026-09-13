@@ -29,7 +29,9 @@ export async function handleQueuedAgentRequest(
     userId: string,
     onMessage: (message: string | DiscordTurn | ToolCall) => Promise<void>,
     workingDir?: string,
-    workBranch?: string
+    workBranch?: string,
+    model?: string,
+    effort?: string
 ): Promise<void> {
     let queueState = channelQueues.get(channelId);
     if (!queueState) {
@@ -46,7 +48,7 @@ export async function handleQueuedAgentRequest(
 
     queueState.active = true;
     try {
-        await processAgentRequest(prompt, onMessage, workingDir, workBranch);
+        await processAgentRequest(prompt, onMessage, workingDir, workBranch, model, effort);
     } finally {
         queueState.active = false;
     }
@@ -56,7 +58,7 @@ export async function handleQueuedAgentRequest(
         if (next) {
             queueState.active = true;
             try {
-                await processAgentRequest(next.prompt, onMessage, workingDir, workBranch);
+                await processAgentRequest(next.prompt, onMessage, workingDir, workBranch, model, effort);
             } finally {
                 queueState.active = false;
             }
@@ -68,7 +70,9 @@ export async function processAgentRequest(
     prompt: string,
     onMessage: (message: string | DiscordTurn | ToolCall) => Promise<void>,
     workingDir?: string,
-    workBranch?: string
+    workBranch?: string,
+    model?: string,
+    effort?: string
 ): Promise<void> {
     const agentRoot = path.join(process.cwd(), 'agent');
     if (!fs.existsSync(agentRoot)) {
@@ -87,7 +91,7 @@ export async function processAgentRequest(
     };
 
     return new Promise((resolve, reject) => {
-        const child = spawn('pnpm', ['exec', 'vite-node', path.resolve(requestDir, '../../src/agent-worker.ts'), prompt], {
+        const child = spawn('pnpm', ['exec', 'vite-node', path.resolve(requestDir, '../../src/agent-worker.ts'), prompt, model, effort], {
             cwd: requestDir,
         });
 

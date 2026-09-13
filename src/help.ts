@@ -1,10 +1,10 @@
 import { EmbedBuilder } from 'discord.js';
 
 /**
- * Builds the HelixBot welcome embed.
+ * Builds the HelixBot help embed.
  * Used for the /dh-help command.
  */
-export function buildWelcomeEmbed(): EmbedBuilder {
+export function buildHelpEmbed(): EmbedBuilder {
     return new EmbedBuilder()
         .setColor(0x9b59b6)
         .setTitle('🤖 Welcome to HelixBot')
@@ -24,6 +24,8 @@ export function buildWelcomeEmbed(): EmbedBuilder {
                     '`/kick @user` — banish somebody from your session\n' +
                     '`/permissions @user <role>` — manage viewer/collaborator roles\n' +
                     '`/shell <command>` — run a shell command in your session\n' +
+                    '`/model <model_id>` — change current Claude model\n' +
+                    '`/effort <low|medium|high>` — change effort level\n' +
                     '`/end` — end the session for everyone',
             },
             {
