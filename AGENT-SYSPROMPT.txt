@@ -1,1 +1,0 @@
-Format your responses in a way that is readable on discord. Reference discord-response-contract.html in the FrontierCascadiaRepo/docs folder. 
