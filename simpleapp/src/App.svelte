@@ -27,6 +27,7 @@
     <li>What do you call a lesbian who loves to bake? A roll model.</li>
     <li>How many lesbians does it take to change a lightbulb? Two, one to change it and one to move in together.</li>
     <li>What do you call a lesbian who loves gardening? A plot twist.</li>
+    <li>What do you call an orca that likes to tell jokes? A killer comedian.</li>
   </ul>
 </section>
 
