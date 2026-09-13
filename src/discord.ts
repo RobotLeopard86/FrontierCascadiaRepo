@@ -1,6 +1,7 @@
 import { Client, GatewayIntentBits, TextChannel, SlashCommandBuilder, ChatInputCommandInteraction, PermissionFlagsBits, ChannelType, PermissionOverwrites } from 'discord.js';
 import { processAgentRequest } from './agent.js';
 import { getSession, createSession, deleteSession } from './sessions.js';
+import { buildWelcomeEmbed } from './welcome-message.js';
 import { execSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
@@ -34,6 +35,9 @@ async function registerCommands(client: Client) {
             .setName('shell')
             .setDescription('Run a shell command in the agent directory')
             .addStringOption(opt => opt.setName('command').setDescription('Shell command to run').setRequired(true)),
+        new SlashCommandBuilder()
+            .setName('dh-help')
+            .setDescription('Get help and information about Double Helix'),
     ];
 
     try {
@@ -205,6 +209,8 @@ export async function initDiscord() {
                     } catch (e: any) {
                         await interaction.editReply(`**Error ending session:**\n${e.message}`);
                     }
+                } else if (commandName === 'dh-help') {
+                    await interaction.reply({ embeds: [buildWelcomeEmbed()] });
                 }
             } catch (error) {
                 console.error('Error handling interaction:', error);
