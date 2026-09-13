@@ -37,30 +37,46 @@ export async function renderTurn(turn: DiscordTurn): Promise<RenderResult> {
   const files: any[] = [];
   const tempFiles: string[] = [];
 
-  // 1. Changed Code
+  const embed = new EmbedBuilder()
+    .setTitle(turn.headline)
+    .setDescription(turn.narration)
+    .setColor(0x00AE86);
+
+  // 1. Changed Code in Embed
   for (const block of turn.changedCode) {
-    contentParts.push(`\`\`\`\n${block.path}:${block.lines}\n\`\`\``);
+    const codeValue = `\`\`\`\n${block.lines}\n\`\`\``;
+    if (codeValue.length <= 1024) {
+      embed.addFields({ name: block.path, value: codeValue });
+    } else {
+      // Too long for embed field, put in content
+      contentParts.push(`\`\`\`\n${block.path}:${block.lines}\n\`\`\``);
+    }
   }
 
   // 2. Diff Logic
   const diffLines = turn.diff.split('\n').length;
   const diffChars = turn.diff.length;
 
-  if (diffLines < 25 && diffChars < 1500) {
+  if (diffLines < 25 && diffChars < 1024) {
+    embed.addFields({ name: 'Diff', value: `\`\`\`diff\n${turn.diff}\n\`\`\`` });
+  } else if (diffLines < 25 && diffChars < 1500) {
+    // Fits in content but not embed
     contentParts.push(`\`\`\`diff\n${turn.diff}\n\`\`\``);
   } else {
     const diffFilePath = path.join(process.cwd(), `temp_${turn.turnId}.diff`);
     await fs.writeFile(diffFilePath, turn.diff);
     files.push(new AttachmentBuilder(diffFilePath, { name: `${turn.turnId}.diff` }));
     tempFiles.push(diffFilePath);
-    contentParts.push(`\n*Diff too large, attached as file.*`);
+    embed.addFields({ name: 'Diff', value: '*Diff too large, attached as file.*' });
   }
 
-  const embed = new EmbedBuilder()
-    .setTitle(turn.headline)
-    .setDescription(turn.narration)
-    .addFields({ name: 'Verification', value: `\`\`\`\n${turn.verification}\n\`\`\`` })
-    .setColor(0x00AE86);
+  // 3. Verification in Embed
+  const verValue = `\`\`\`\n${turn.verification}\n\`\`\``;
+  if (verValue.length <= 1024) {
+    embed.addFields({ name: 'Verification', value: verValue });
+  } else {
+    contentParts.push(`**Verification:**\n\`\`\`\n${turn.verification}\n\`\`\``);
+  }
 
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()

@@ -48,6 +48,7 @@ Ensure the DIFF is a standard unified diff and the CODE blocks provide enough co
             options: {
                 allowedTools: ["Read", "Edit", "Glob", "Bash"],
                 permissionMode: "bypassPermissions",
+                continue: true
             },
         })) {
             if (message.type === "assistant" && message.message?.content) {
