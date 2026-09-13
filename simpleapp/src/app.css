@@ -1,7 +1,7 @@
 :root {
   --text: #6b6375;
   --text-h: #08060d;
-  --bg: linear-gradient(to bottom, #87CEEB, #4682B4);
+  --bg: red;
   --border: #e5e4e7;
   --code-bg: #f4f3ec;
   --accent: #aa3bff;
@@ -34,7 +34,7 @@
   :root {
     --text: #9ca3af;
     --text-h: #f3f4f6;
-    --bg: linear-gradient(to bottom, #1e3a8a, #172554);
+    --bg: red;
     --border: #2e303a;
     --code-bg: #1f2028;
     --accent: #c084fc;
