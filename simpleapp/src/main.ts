@@ -1,1 +1,7 @@
-console.log("Welcome to my awesome website!");
+import { mount } from 'svelte';
+import App from './App.svelte';
+import './app.css';
+
+mount(App, {
+  target: document.getElementById('app')!,
+});
