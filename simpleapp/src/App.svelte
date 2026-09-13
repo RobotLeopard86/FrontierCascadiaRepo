@@ -1,10 +1,12 @@
 <script>
+  import Counter from './lib/Counter.svelte';
   let name = 'World';
 </script>
 
 <main>
   <h1>Hello {name}!</h1>
   <p>Welcome to your clean Svelte page.</p>
+  <Counter />
 </main>
 
 <style>
