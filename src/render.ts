@@ -5,7 +5,7 @@ import {
   ButtonStyle,
   AttachmentBuilder
 } from 'discord.js';
-import { DiscordTurn, ToolCall } from './types';
+import type { DiscordTurn, ToolCall } from './types.js';
 import fs from 'fs/promises';
 import path from 'path';
 

@@ -1,8 +1,7 @@
-import { Client, GatewayIntentBits, TextChannel, SlashCommandBuilder, ChatInputCommandInteraction, PermissionFlagsBits, ChannelType, PermissionOverwrites } from 'discord.js';
-import { processAgentRequest, handleQueuedAgentRequest } from './agent.js';
+import { Client, GatewayIntentBits, TextChannel, SlashCommandBuilder, PermissionFlagsBits, ChannelType, PermissionOverwrites } from 'discord.js';
+import { handleQueuedAgentRequest } from './agent.js';
 import { getSession, createSession, deleteSession, saveSessions, getSessions } from './sessions.js';
 import { buildWelcomeEmbed } from './welcome-message.js';
-import { routeAndHandle } from './router.js';
 import { execSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
@@ -272,7 +271,6 @@ export async function initDiscord() {
             if (session) {
                 // Session channel: no prefix needed
                 console.log(`[Session] ${message.author.username}: ${message.content}`);
-                console.log(`[SJSON] ${JSON.stringify(session.permissions)}`)
 
                 if (message.author.id !== session.creatorId && session.permissions?.[message.author.id] !== 'collaborator') {
                     await sendMessage(`You have viewer permissions and cannot send commands to the agent. Please ask the session creator to upgrade you to a collaborator in another channel.`, message.channelId);
@@ -281,6 +279,8 @@ export async function initDiscord() {
 
                 try {
                     await handleQueuedAgentRequest(message.channelId, message.content || '', message.author.id, async (formatted) => {
+                        await sendMessage(formatted, message.channelId);
+                    }, session.agentDir, session.workBranch);
                 } catch (error) {
                     console.error('Error processing session agent request:', error);
                     await sendMessage(`AGENT REPLY\nType: error\nBody:\nFailed to process session request.`, message.channelId);
