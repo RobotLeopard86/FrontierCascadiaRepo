@@ -101,6 +101,7 @@ export async function initDiscord() {
                     const branch = options.getString('branch') || 'main';
 
                     await interaction.deferReply();
+                    await interaction.editReply('Creating session...');
 
                     const agentRoot = path.join(process.cwd(), 'agent');
                     if (!fs.existsSync(agentRoot)) fs.mkdirSync(agentRoot, { recursive: true });
@@ -193,6 +194,7 @@ export async function initDiscord() {
                         execSync(`git merge ${workBranch}`, { cwd: agentDir });
                         execSync(`git branch -d ${workBranch}`, { cwd: agentDir });
                         execSync(`git push origin ${initialBranch}`, { cwd: agentDir });
+                        execSync(`git push origin -d ${workBranch}`, { cwd: agentDir });
 
                         const discordChannel = await client.channels.fetch(channel!.id);
                         if (discordChannel) await discordChannel.delete();
@@ -230,22 +232,6 @@ export async function initDiscord() {
                     await sendMessage(`AGENT REPLY\nType: error\nBody:\nFailed to process session request.`, message.channelId);
                 }
                 return;
-            }
-
-            if (message.channelId === resolvedChannelId) {
-                console.log(`[Discord] ${message.author.username}: ${message.content}`);
-
-                if (message.content?.startsWith('AGENT REQUEST: ')) {
-                    const prompt = message.content.slice('AGENT REQUEST: '.length).trim();
-                    try {
-                        await processAgentRequest(prompt, async (formatted) => {
-                            await sendMessage(formatted);
-                        });
-                    } catch (error) {
-                        console.error('Error processing agent request:', error);
-                        await sendMessage(`AGENT REPLY\nType: error\nBody:\nFailed to process agent request.`);
-                    }
-                }
             }
         });
 

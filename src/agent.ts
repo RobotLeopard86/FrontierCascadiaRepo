@@ -21,7 +21,7 @@ export async function processAgentRequest(
     }
 
     return new Promise((resolve, reject) => {
-        const child = spawn('pnpm', ['exec', 'vite-node', path.join(process.cwd(), 'src/agent-worker.ts'), prompt], {
+        const child = spawn('pnpm', ['exec', 'vite-node', path.resolve(process.cwd(), '../../src/agent-worker.ts'), prompt], {
             cwd: requestDir,
         });
 
@@ -67,9 +67,11 @@ export async function processAgentRequest(
                     console.log(`[Git] Committing changes in ${workingDir}...`);
                     execSync('git add .', { cwd: workingDir });
 
-                    // Use a truncated version of the prompt as the commit message
-                    const commitMsg = `Agent update: ${prompt.slice(0, 50)}${prompt.length > 50 ? '...' : ''}`;
-                    execSync(`git commit -m "${commitMsg}"`, { cwd: workingDir });
+                    // Use a truncated version of the prompt as the commit message (max 150 chars total)
+                    const truncatedPrompt = prompt.length > 134 ? prompt.slice(0, 134) + '...' : prompt;
+                    const commitMsg = `Agent update: ${truncatedPrompt}`.slice(0, 150);
+                    const escapedMsg = commitMsg.replace(/"/g, '\\"');
+                    execSync(`git commit -m "${escapedMsg}"`, { cwd: workingDir });
                     execSync(`git push origin ${workBranch}`, { cwd: workingDir });
                     console.log(`[Git] Successfully pushed changes to ${workBranch}`);
                 } catch (e) {
