@@ -5,6 +5,9 @@ import { buildWelcomeEmbed } from './welcome-message.js';
 import { execSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
+import { renderTurn } from './render.js';
+import { saveTurn, getTurn } from './storage.js';
+import { DiscordTurn } from './types.js';
 
 const TOKEN = process.env.DISCORD_TOKEN || '';
 const GUILD_ID = process.env.GUILD_ID || '';
@@ -95,6 +98,15 @@ export async function initDiscord() {
         });
 
         client.on('interactionCreate', async (interaction) => {
+            if (interaction.isButton()) {
+                if (interaction.customId.startsWith('thinking:')) {
+                    const turnId = interaction.customId.split(':')[1];
+                    const turn = await getTurn(turnId);
+                    if (!turn) return interaction.reply({ content: 'Turn record not found.', ephemeral: true });
+                    return interaction.reply({ content: `**Thinking:**\n${turn.thinking}`, ephemeral: true });
+                }
+                return;
+            }
             if (!interaction.isChatInputCommand()) return;
 
             const { commandName, options, guild, user, channel } = interaction;
@@ -123,8 +135,9 @@ export async function initDiscord() {
 
                     if (!guild) throw new Error('Command must be used in a guild');
 
+                    const randomId = Math.random().toString(36).substring(2, 8);
                     const sessionChannel = await guild.channels.create({
-                        name: `session-${branch}`,
+                        name: `session-${randomId}`,
                         type: ChannelType.GuildText,
                         permissionOverwrites: [
                             {
@@ -200,6 +213,9 @@ export async function initDiscord() {
                         execSync(`git push origin ${initialBranch}`, { cwd: agentDir });
                         execSync(`git push origin -d ${workBranch}`, { cwd: agentDir });
 
+                        // Delete agent work directory
+                        fs.rmSync(agentDir, { recursive: true, force: true });
+
                         const discordChannel = await client.channels.fetch(channel!.id);
                         if (discordChannel) await discordChannel.delete();
 
@@ -248,7 +264,7 @@ export async function initDiscord() {
     });
 }
 
-export async function sendMessage(text: string, channelId?: string) {
+export async function sendMessage(content: string | DiscordTurn, channelId?: string) {
     const targetId = channelId || resolvedChannelId;
     if (!targetId) {
         throw new Error('Bot is not ready; channel resolution pending');
@@ -258,5 +274,26 @@ export async function sendMessage(text: string, channelId?: string) {
         throw new Error('Target channel not found or is not a text channel');
     }
 
-    await (channel as TextChannel).send(text);
+    if (typeof content === 'string') {
+        await (channel as TextChannel).send(content);
+    } else {
+        await saveTurn(content);
+        const rendered = await renderTurn(content);
+        try {
+            await (channel as TextChannel).send({
+                content: rendered.content,
+                embeds: rendered.embeds,
+                components: rendered.components,
+                files: rendered.files,
+            });
+        } finally {
+            for (const file of rendered.tempFiles) {
+                try {
+                    await fs.promises.unlink(file);
+                } catch (e) {
+                    // ignore
+                }
+            }
+        }
+    }
 }

@@ -1,6 +1,5 @@
 import dotenv from 'dotenv';
 import { initDiscord } from './discord';
-import { initApi } from './api';
 
 dotenv.config();
 
@@ -16,7 +15,6 @@ async function main() {
 
     try {
         await initDiscord();
-        await initApi(PORT);
         console.log('Application started successfully.');
     } catch (error) {
         console.error('Application failed to start:', error);

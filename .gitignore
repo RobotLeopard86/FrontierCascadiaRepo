@@ -31,4 +31,5 @@ Thumbs.db
 
 # Agent workspace
 agent
+turns
 sessions.json
