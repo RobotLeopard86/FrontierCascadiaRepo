@@ -11,6 +11,16 @@
   <Counter />
 </main>
 
+<section>
+  <h2>Bad Dad Jokes</h2>
+  <ul>
+    <li>Why did the scarecrow win an award? Because he was outstanding in his field.</li>
+    <li>What do you call a fake noodle? An impasta.</li>
+    <li>I'm reading a book on anti-gravity. It's impossible to put down.</li>
+    <li>Why don't scientists trust atoms? Because they make up everything.</li>
+  </ul>
+</section>
+
 <style>
   main {
     text-align: center;
